@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Users collection ──────────────────────────────
+    // Signed-in users can read/write ONLY their own document.
+    // Nobody can change their own "role" field.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.role == 'customer';
+
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+    }
+
+    // ── Products collection ───────────────────────────
+    // Readable by everyone (even if not signed in).
+    // Writable by nobody (admin tools come later).
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
